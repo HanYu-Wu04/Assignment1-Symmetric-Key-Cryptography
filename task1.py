@@ -1,6 +1,7 @@
 # task1 : Modes of Operation
 # Ethan Swenke and HanYu Wu
 # CSC-321-03
+from Crypto.Random import AES
 
 def take_input(input_file):
     try:
@@ -20,8 +21,17 @@ def take_input(input_file):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+# need to implement our own:
+    # PKCS#7 padding for files that are not evenly divisible by 128 bits
+        # http://tools.ietf.org/html/rfc5652#section-6.3
+        # http://en.wikipedia.org/wiki/Padding_(cryptography)#PKCS7 
+    # key generation
+
 def ECB(content):
     return
 
 def CBC(content):
+    return
+
+def key():
     return

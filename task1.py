@@ -1,7 +1,7 @@
 # task1 : Modes of Operation
 # Ethan Swenke and HanYu Wu
 # CSC-321-03
-from Crypto.Random import AES
+from Crypto.Cipher import AES
 
 def take_input(input_file):
     try:
@@ -28,7 +28,10 @@ def take_input(input_file):
     # key generation
 
 def ECB(content):
-    return
+    key = key()
+    cipher = AES.new(key, AES.MODE_ECB)
+    encrypted_text = cipher.encrypt(content)
+    return encrypted_text
 
 def CBC(content):
     return

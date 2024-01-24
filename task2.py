@@ -7,6 +7,7 @@ from Crypto.Random import get_random_bytes
 
 def submit(str):
     # URL encode any ; or = characters that appear in the user provided string
+        # in ASCII, ; is %3B and = is %3D 
     # pad this new string using PCKS#7
     # encrypt this string using our CBC implemenation
 

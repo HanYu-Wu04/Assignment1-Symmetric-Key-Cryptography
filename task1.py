@@ -17,9 +17,12 @@ def pkcs7_pad(data, block_size):
     # the value of the added bytes will also be the number of bytes padded from the above formula
     # since file read in rb, the data is in bytes. check the length with regard to this, and 
     # concatenate based on the above rules and return the new block
-    padding_size = block_size - (len(data) % block_size)
-    padding = bytes([padding_size] * padding_size)
-    return data + padding
+    if len(data) != 16:
+        padding_size = block_size - (len(data) % block_size)
+        padding = bytes([padding_size] * padding_size)
+        return data + padding
+    else:
+        return data
 
 def pkcs7_unpad(data):
     # the last byte of the data is the number of bytes padded
@@ -29,7 +32,7 @@ def pkcs7_unpad(data):
         raise Exception("Invalid padding...")
     return data[:-padding_size]
 
-def ecb_encript(plaintext, key):
+def ecb_encrypt(plaintext, key):
     # divide the content string into blocks of 128 bits
     # check if block is full 128 bits, if not add padding()
     # run the encrypt, add that block to a new string
@@ -37,7 +40,18 @@ def ecb_encript(plaintext, key):
         # empty string to add the encrypted block to
     #return the final string entirely encrypted
     cipher = AES.new(key, AES.MODE_ECB)
-    ciphertext = cipher.encrypt(pkcs7_pad(plaintext, AES.block_size))
+    ciphertext = b""
+
+    for i in range(0, len(plaintext), AES.block_size):
+        block = plaintext[i : i+AES.block_size]
+        encrypted_block = cipher.encrypt(pkcs7_pad(block, AES.block_size))
+        ciphertext += encrypted_block
+        if len(encrypted_block) != 16:
+            print("INCORRECT PADDING")
+            print("len of encrypted block: " + str(len(encrypted_block)))
+            print("len of unencrypted block: " + str(len(block)))
+            break
+
     return ciphertext
 
 def ecb_decrypt(ciphertext, key):
@@ -54,11 +68,17 @@ def cbc_encrypt(plaintext, key, IV):
     ciphertext = b""
     previous_block = IV
     for i in range(0, len(plaintext), AES.block_size):
-        block = plaintext[i:i + AES.block_size]
+        block = plaintext[i : i+AES.block_size]
         xor_block = bytes([b1 ^ b2 for b1, b2 in zip(block, previous_block)])
         encrypted_block = cipher.encrypt(pkcs7_pad(xor_block, AES.block_size))
         ciphertext += encrypted_block
         previous_block = encrypted_block
+        if len(encrypted_block) != 16:
+            print("INCORRECT PADDING")
+            print("len of encrypted block: " + str(len(encrypted_block)))
+            print("len of unencrypted block: " + str(len(block)))
+
+            break
     return ciphertext
 
 def cbc_decrypt(ciphertext, key, IV):
@@ -88,7 +108,7 @@ def task1(file_path):
     output_ecb_file = 'output_ecb.bmp'
     output_cbc_file = 'output_cbc.bmp'
 
-    ECB_ciphertext = ecb_encript(plaintext, key)
+    ECB_ciphertext = ecb_encrypt(plaintext, key)
     CBC_ciphertext = cbc_encrypt(plaintext, key, IV)
     write_encrypted_file("ecb_encrypted.bmp", ECB_ciphertext)
     write_encrypted_file("cbc_encrypted.bmp", CBC_ciphertext)

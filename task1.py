@@ -17,9 +17,12 @@ def pkcs7_pad(data, block_size):
     # the value of the added bytes will also be the number of bytes padded from the above formula
     # since file read in rb, the data is in bytes. check the length with regard to this, and 
     # concatenate based on the above rules and return the new block
-    padding_size = block_size - (len(data) % block_size)
+    padding_size = block_size - len(data) % block_size
+    if padding_size == 0:
+        padding_size = block_size  # Add a full block of padding if data length is a multiple of block_size
     padding = bytes([padding_size] * padding_size)
     return data + padding
+
 
 def pkcs7_unpad(data):
     # the last byte of the data is the number of bytes padded
@@ -66,6 +69,7 @@ def cbc_decrypt(ciphertext, key, IV):
     decrypted = pkcs7_unpad(cipher.decrypt(ciphertext))
     return decrypted
 
+
 def read_bmp_file(file_name):
     with open(file_name, 'rb') as file_in:
         content = file_in.read()
@@ -90,6 +94,7 @@ def task1(file_path):
 
     ECB_ciphertext = ecb_encript(plaintext, key)
     CBC_ciphertext = cbc_encrypt(plaintext, key, IV)
+
     write_encrypted_file("ecb_encrypted.bmp", ECB_ciphertext)
     write_encrypted_file("cbc_encrypted.bmp", CBC_ciphertext)
 

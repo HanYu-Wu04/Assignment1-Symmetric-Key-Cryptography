@@ -3,6 +3,7 @@
 # CSC-321-03
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
 import sys
 
 
@@ -15,30 +16,30 @@ def generate_iv():
 
 
 def pkcs7_pad(data, block_size):
-    if len(data) != 16:
-        padding_size = block_size - (len(data) % block_size)
-        padding = bytes([padding_size] * padding_size)
-        return data + padding
-    else:
-        return data
+    padding_size = block_size - (len(data) % block_size)
+    padding = bytes([padding_size] * padding_size)
+
+    return data + padding
 
 
 def pkcs7_unpad(data):
     padding_size = data[-1]
+    print("padding size: " + str(padding_size))
 
-    if padding_size > len(data):
+    if padding_size >= len(data):
         raise Exception("Invalid padding...")
     
     return data[:-padding_size]
 
 
 def ecb_encrypt(plaintext, key):
+    plaintext = pkcs7_pad(plaintext, AES.block_size)
     cipher = AES.new(key, AES.MODE_ECB)
     ciphertext = b""
 
     for i in range(0, len(plaintext), AES.block_size):
         block = plaintext[i : i+AES.block_size]
-        encrypted_block = cipher.encrypt(pkcs7_pad(block, AES.block_size))
+        encrypted_block = cipher.encrypt(block)
         ciphertext += encrypted_block
 
     return ciphertext
@@ -51,37 +52,35 @@ def ecb_decrypt(ciphertext, key):
     return decrypted
 
 
-def cbc_encrypt(plaintext, key, IV):
+def cbc_encrypt(plaintext, key, iv):
+    plaintext = pkcs7_pad(plaintext, AES.block_size)
     cipher = AES.new(key, AES.MODE_ECB)
     ciphertext = b""
-    previous_block = IV
+    previous_block = iv
 
-    for i in range(0, len(plaintext), AES.block_size):
-        block = plaintext[i : i+AES.block_size]
+    for i in range(0, len(plaintext), 16):
+        block = plaintext[i:i+16]
         xor_block = bytes([b1 ^ b2 for b1, b2 in zip(block, previous_block)])
-        encrypted_block = cipher.encrypt(pkcs7_pad(xor_block, AES.block_size))
+        encrypted_block = cipher.encrypt(xor_block)
         ciphertext += encrypted_block
         previous_block = encrypted_block
-        
+
     return ciphertext
 
 
-def cbc_decrypt(ciphertext, key, IV):
-    block_size = AES.block_size
+def cbc_decrypt(ciphertext, key, iv):
     cipher = AES.new(key, AES.MODE_ECB)
-    plaintext = b""
-    blocks = [ciphertext[i:i+block_size] for i in range(0, len(ciphertext), block_size)]
-    
-    for i in range(len(blocks)):
-        decrypted_block = cipher.decrypt(blocks[i])
-        if i == 0:
-            decrypted_block = bytes([decrypted_block[j] ^ IV[j] for j in range(block_size)])
-        else:
-            decrypted_block = bytes([decrypted_block[j] ^ blocks[i-1][j] for j in range(block_size)])
+    decrypted_text = b""
+    previous_block = iv
 
-        plaintext += decrypted_block
-    
-    return plaintext
+    for i in range(0, len(ciphertext), 16):
+        block = ciphertext[i:i+16]
+        decrypted_block = cipher.decrypt(block)
+        decrypted_block = bytes([b1 ^ b2 for b1, b2 in zip(decrypted_block, previous_block)])
+        decrypted_text += decrypted_block
+        previous_block = block
+
+    return pkcs7_unpad(decrypted_text)
 
 
 def read_bmp_file(file_name):

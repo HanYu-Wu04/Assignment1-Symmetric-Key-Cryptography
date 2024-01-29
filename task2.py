@@ -24,7 +24,6 @@ def submit(str, key, IV):
     str = quote(str)
     app_str = "userid=456;userdata=" + str + ";session-id=31337"
     encrypted_str = cbc_encrypt(app_str.encode('utf-8'), key, IV)
-    print(encrypted_str)
 
     return encrypted_str
 
@@ -38,19 +37,6 @@ def verify(str, key, IV):
     print(decrypted_str)
     
     return substr in decrypted_str.decode('utf-8')
-
-
-def generate_key():
-    return get_random_bytes(16)
-
-
-def pkcs7_pad(data, block_size):
-    if len(data) != 16:
-        padding_size = block_size - (len(data) % block_size)
-        padding = bytes([padding_size] * padding_size)
-        return data + padding
-    else:
-        return data
 
 
 def main():

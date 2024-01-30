@@ -12,8 +12,9 @@ def task2():
     key = generate_key()
     user_input = input("Enter a string: ")
     submit_str = submit(user_input, key, IV)
+    byte_flip_str = byte_flipping(submit_str)
 
-    return print(verify(submit_str, key, IV))
+    return print(verify(byte_flip_str, key, IV))
 
 
 def submit(str, key, IV):
@@ -34,9 +35,32 @@ def verify(str, key, IV):
     # return true / false based on whether that string is present
     substr = ";admin=true;"
     decrypted_str = cbc_decrypt(str, key, IV)
-    print(decrypted_str)
     
-    return substr in decrypted_str.decode('utf-8')
+    return substr in decrypted_str[16:].decode('utf-8')
+
+
+def byte_flipping(ciphertext):
+    # need to xor the correct bytes of the ciphertext block that is
+    # PREVIOUS to the plaintext block that we want to change, so in this case
+    # if the block we want to change contains ';admin=true;', we want to 
+    # change a byte in the ciphertext block immediately preceding this block.
+    # if you know where the 16 bytes are that hold the ';admin=true;', then you
+    # can figure out where to change the bytes in the encrypted data
+    # 
+    # given the ciphertext, we need to find the right bytes to flip such that
+    # the plaintext that it will be xor'd with will have the corrects bytes changed
+    eq_xor = ord('e') ^ ord('=')
+    semi_xor = ord('s') ^ ord(';')
+    ciphertext = bytearray(ciphertext)
+    ciphertext[4] ^= semi_xor
+    ciphertext[10] ^= eq_xor
+    ciphertext[15] ^= semi_xor
+    ciphertext = bytes(ciphertext)
+
+    # WORKS, but flipped data gets corrupted and cant be read, need to modify
+    # VERIFY function so that we can read through and check for the string
+
+    return ciphertext
 
 
 def main():

@@ -24,7 +24,6 @@ def pkcs7_pad(data, block_size):
 
 def pkcs7_unpad(data):
     padding_size = data[-1]
-    print("padding size: " + str(padding_size))
 
     if padding_size >= len(data):
         raise Exception("Invalid padding...")

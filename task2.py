@@ -19,7 +19,7 @@ def task2():
 
 def submit(str, key, IV):
     # URL encode any ; or = characters that appear in the user provided string
-        # in ASCII, ; is %3B and = is %3D 
+        # git st; is %3B and = is %3D 
     # pad this new string using PCKS#7
     # encrypt this string using our CBC implemenation
     str = quote(str)
@@ -40,13 +40,6 @@ def verify(str, key, IV):
 
 
 def byte_flipping(ciphertext):
-    # need to xor the correct bytes of the ciphertext block that is
-    # PREVIOUS to the plaintext block that we want to change, so in this case
-    # if the block we want to change contains ';admin=true;', we want to 
-    # change a byte in the ciphertext block immediately preceding this block.
-    # if you know where the 16 bytes are that hold the ';admin=true;', then you
-    # can figure out where to change the bytes in the encrypted data
-    # 
     # given the ciphertext, we need to find the right bytes to flip such that
     # the plaintext that it will be xor'd with will have the corrects bytes changed
     eq_xor = ord('e') ^ ord('=')
@@ -56,9 +49,6 @@ def byte_flipping(ciphertext):
     ciphertext[10] ^= eq_xor
     ciphertext[15] ^= semi_xor
     ciphertext = bytes(ciphertext)
-
-    # WORKS, but flipped data gets corrupted and cant be read, need to modify
-    # VERIFY function so that we can read through and check for the string
 
     return ciphertext
 

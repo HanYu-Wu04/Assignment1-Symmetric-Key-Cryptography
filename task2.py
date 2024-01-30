@@ -8,8 +8,8 @@ from task1 import *
 
 
 def task2():
-    IV = generate_key()
-    key = generate_key()
+    IV = generate_16()
+    key = generate_16()
     user_input = input("Enter a string: ")
     submit_str = submit(user_input, key, IV)
     byte_flip_str = byte_flipping(submit_str)
@@ -24,7 +24,7 @@ def submit(str, key, IV):
     # encrypt this string using our CBC implemenation
     str = quote(str)
     app_str = "userid=456;userdata=" + str + ";session-id=31337"
-    encrypted_str = cbc_encrypt(app_str.encode('utf-8'), key, IV)
+    encrypted_str = cbc_encrypt_s(app_str.encode('utf-8'), key, IV)
 
     return encrypted_str
 
@@ -34,7 +34,7 @@ def verify(str, key, IV):
     # parse the string for the pattern ";admin=true;"
     # return true / false based on whether that string is present
     substr = ";admin=true;"
-    decrypted_str = cbc_decrypt(str, key, IV)
+    decrypted_str = cbc_decrypt_s(str, key, IV)
     
     return substr in decrypted_str[16:].decode('utf-8')
 
@@ -51,6 +51,37 @@ def byte_flipping(ciphertext):
     ciphertext = bytes(ciphertext)
 
     return ciphertext
+
+
+def cbc_encrypt_s(plaintext, key, iv):
+    cipher = AES.new(key, AES.MODE_ECB)
+    ciphertext = b""
+    previous_block = iv
+    plaintext = pkcs7_pad(plaintext, 16)
+
+    for i in range(0, len(plaintext), 16):
+        block = plaintext[i:i+16]
+        xor_block = bytes([b1 ^ b2 for b1, b2 in zip(block, previous_block)])
+        encrypted_block = cipher.encrypt(xor_block)
+        ciphertext += encrypted_block
+        previous_block = encrypted_block
+
+    return ciphertext
+
+
+def cbc_decrypt_s(ciphertext, key, iv):
+    cipher = AES.new(key, AES.MODE_ECB)
+    decrypted_text = b""
+    previous_block = iv
+
+    for i in range(0, len(ciphertext), 16):
+        block = ciphertext[i:i+16]
+        decrypted_block = cipher.decrypt(block)
+        decrypted_block = bytes([b1 ^ b2 for b1, b2 in zip(decrypted_block, previous_block)])
+        decrypted_text += decrypted_block
+        previous_block = block
+
+    return pkcs7_unpad(decrypted_text)
 
 
 def main():

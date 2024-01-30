@@ -7,11 +7,7 @@ from Crypto.Util.Padding import pad, unpad
 import sys
 
 
-def generate_key():
-    return get_random_bytes(16)
-
-
-def generate_iv():
+def generate_16():
     return get_random_bytes(16)
 
 
@@ -32,12 +28,17 @@ def pkcs7_unpad(data):
 
 
 def ecb_encrypt(plaintext, key):
-    plaintext = pkcs7_pad(plaintext, AES.block_size)
     cipher = AES.new(key, AES.MODE_ECB)
     ciphertext = b""
 
-    for i in range(0, len(plaintext), AES.block_size):
-        block = plaintext[i : i+AES.block_size]
+    header = plaintext[:54]
+    plaintext = plaintext[54:]
+
+    ciphertext += header
+    padded_plaintext = pkcs7_pad(plaintext, AES.block_size)
+
+    for i in range(0, len(padded_plaintext), AES.block_size):
+        block = padded_plaintext[i : i+AES.block_size]
         encrypted_block = cipher.encrypt(block)
         ciphertext += encrypted_block
 
@@ -46,19 +47,33 @@ def ecb_encrypt(plaintext, key):
 
 def ecb_decrypt(ciphertext, key):
     cipher = AES.new(key, AES.MODE_ECB)
-    decrypted = pkcs7_unpad(cipher.decrypt(ciphertext))
 
-    return decrypted
+    header = ciphertext[:54]
+    encripted_ciphertext = ciphertext[54:]
+
+    decrypted = b""
+
+    for i in range(0, len(encripted_ciphertext), AES.block_size):
+        block = encripted_ciphertext[i : i+AES.block_size]
+        decrypted_block = cipher.decrypt(block)
+        decrypted += decrypted_block
+
+    return header + pkcs7_unpad(decrypted)
 
 
 def cbc_encrypt(plaintext, key, iv):
-    plaintext = pkcs7_pad(plaintext, AES.block_size)
     cipher = AES.new(key, AES.MODE_ECB)
     ciphertext = b""
     previous_block = iv
 
-    for i in range(0, len(plaintext), 16):
-        block = plaintext[i:i+16]
+    header = plaintext[:54]
+    plaintext = plaintext[54:]
+
+    ciphertext += header
+    padded_plaintext = pkcs7_pad(plaintext, AES.block_size)
+
+    for i in range(0, len(padded_plaintext), 16):
+        block = padded_plaintext[i:i+16]
         xor_block = bytes([b1 ^ b2 for b1, b2 in zip(block, previous_block)])
         encrypted_block = cipher.encrypt(xor_block)
         ciphertext += encrypted_block
@@ -72,6 +87,9 @@ def cbc_decrypt(ciphertext, key, iv):
     decrypted_text = b""
     previous_block = iv
 
+    header = ciphertext[:54]
+    ciphertext = ciphertext[54:]
+
     for i in range(0, len(ciphertext), 16):
         block = ciphertext[i:i+16]
         decrypted_block = cipher.decrypt(block)
@@ -79,7 +97,7 @@ def cbc_decrypt(ciphertext, key, iv):
         decrypted_text += decrypted_block
         previous_block = block
 
-    return pkcs7_unpad(decrypted_text)
+    return header + pkcs7_unpad(decrypted_text)
 
 
 def read_bmp_file(file_name):
@@ -102,8 +120,8 @@ def write_encrypted_file(file_name, content):
 def task1(file_path):
     plaintext = read_bmp_file(file_path)
 
-    key = generate_key()
-    IV = generate_iv()
+    key = generate_16()
+    IV = generate_16()
 
     ECB_ciphertext = ecb_encrypt(plaintext, key)
     CBC_ciphertext = cbc_encrypt(plaintext, key, IV)

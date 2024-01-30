@@ -52,7 +52,6 @@ def ecb_decrypt(ciphertext, key):
     encripted_ciphertext = ciphertext[54:]
 
     decrypted = b""
-
     for i in range(0, len(encripted_ciphertext), AES.block_size):
         block = encripted_ciphertext[i : i+AES.block_size]
         decrypted_block = cipher.decrypt(block)
